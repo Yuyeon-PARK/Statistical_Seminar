@@ -1,0 +1,140 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+
+
+```{r}
+options(warn=-1)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+####데이터 로드####
+GDP<-read.csv("gdp.csv")
+hum<-read.csv("humanities.csv")
+int<-read.csv("internet.csv")
+list<-read.csv("cont-list.csv")
+head(GDP);head(hum);head(int);head(list)
+```
+
+```{r}
+####데이터 merge####
+GDP<-select(GDP,c(1,2,13))
+hum<-select(hum,c(1,2,25))
+int<-select(int,c(1,9))
+list<-select(list,c(1,2,4))
+
+names(int)<-c("country","internet")
+names(list)<-c("continent","cont.code","code")
+  
+total1 <- merge(GDP,hum,by="Country.Code")
+total1<-select(total1,1,2,3,5)
+names(total1)<-c("code","country","gdp","humanities")
+head(total1)
+
+total2 <- merge(total1,int,by="country")
+total<- merge(total2, list, by="code")
+head(total)
+```
+
+```{r}
+####plot#####
+pairs(total[,3:5])
+```
+
+```{r message=FALSE, warning=FALSE}
+####변수변환####
+total$lngdp<-log(total$gdp)
+pairs(total[,c(3,4,5,8)])
+attach(total)
+```
+
+```{r}
+ggplot(data = total,mapping = aes(x = cont.code)) + 
+  geom_bar()
+```
+
+```{r}
+ggplot(total, aes(x=internet, y=lngdp)) +
+  geom_point() + 
+  geom_text(label=country,cex=3,check_overlap = T)
+```
+
+```{r}
+ggplot(total,aes(x=internet,y=lngdp,color=humanities))+
+  geom_point()+
+  scale_color_gradient()+
+  geom_text(label=country, cex=3,check_overlap = T)
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(total,aes(x=internet,y=lngdp,color=humanities))+
+  geom_point()+
+  scale_color_gradient()+
+  stat_smooth(method=lm) 
+```
+```{r message=FALSE, warning=FALSE}
+ggplot(total, mapping = aes(x = lngdp, y = internet)) + 
+  geom_point(mapping = aes(color = humanities)) + 
+  geom_smooth()
+```
+```{r message=FALSE, warning=FALSE}
+ggplot(total, mapping = aes(x = lngdp, y = internet)) + 
+  geom_point(aes(size = humanities,color=cont.code), alpha = 1/3) + 
+  geom_smooth()
+```
+
+```{r}
+ggplot(total,aes(x=internet,y=lngdp,color=cont.code))+
+  geom_point()+
+  geom_text(label=country, cex=3,check_overlap = T)
+```
+
+```{r}
+ggplot(total,aes(x=internet,y=lngdp,color=cont.code))+
+  geom_boxplot()
+```
+
+```{r}
+ggplot(total,aes(x=internet,y=humanities,color=cont.code))+
+  geom_boxplot()
+```
+
+```{r}
+ggplot(total,aes(x=lngdp,y=humanities,color=cont.code))+
+  geom_boxplot()
+```
+
+```{r}
+ggplot(total,aes(x=internet,y=humanities,color=cont.code))+
+  geom_point()
+```
+
+```{r}
+ggplot(total,aes(x=lngdp,y=humanities,color=cont.code))+
+  geom_point()
+```
+
+```{r}
+###internet을 도구변수로 가정한 후, 각 변수들간의 관계를 plot으로 파악###
+cor(total[,c(4,5,8)])
+```
+
+```{r}
+fitted<-lm(lngdp~internet)$fitted
+```
+
+```{r}
+ggplot(total,aes(x=fitted,y=humanities,color=cont.code))+
+  geom_point()
+```
+
+```{r}
+ggplot(total) + geom_point(mapping = aes(x = lngdp, y = internet,color=humanities)) + facet_wrap(~ cont.code, nrow = 2)
+```
